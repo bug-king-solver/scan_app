@@ -39,25 +39,39 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ route, navigation }) => {
             Alert.alert("Error", "Please enter a valid email address.");
             return;
         }
-
+    
         const available = await MailComposer.isAvailableAsync();
         if (!available) {
             Alert.alert("Error", "Mail services are not available");
             return;
         }
+    
         try {
+            const base64 = await FileSystem.readAsStringAsync(photo, { encoding: 'base64' });
+            const imageData = `data:image/jpeg;base64,${base64}`;
+            const pdf = new jsPDF();
+            pdf.addImage(imageData, 'JPEG', 10, 10, 180, 160);
+            
+            const pdfBase64 = pdf.output('datauristring').split(',')[1];
+            const uri = FileSystem.cacheDirectory + 'temp_receipt.pdf';
+            await FileSystem.writeAsStringAsync(uri, pdfBase64, { encoding: FileSystem.EncodingType.Base64 });
+    
             const emailResponse = await MailComposer.composeAsync({
                 recipients: [email + '@wickedfile.email'],
                 subject: 'A copy of receipt!',
                 body: 'Here is the pdf file you requested.',
-                attachments: [photo]
+                attachments: [uri]
             });
+    
             if (emailResponse.status === 'sent') {
                 Alert.alert('Success', 'Email sent successfully!');
                 await AsyncStorage.setItem('savedEmail', email);
             } else {
                 Alert.alert('Error', 'Email was not sent.');
             }
+    
+            // Optionally delete the temporary file
+            await FileSystem.deleteAsync(uri);
         } catch (error) {
             console.error('Failed to send email:', error);
             Alert.alert('Error', 'Failed to send email. Please check the email address and try again.');
@@ -66,6 +80,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ route, navigation }) => {
         setEmail('');
         setModalVisible(false);
     };
+    
 
     const downloadPdf = async () => {
         if (!photo) {
