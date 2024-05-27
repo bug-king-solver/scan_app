@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Button } from 'react-native';
-import { useCameraPermissions , CameraView } from 'expo-camera';
+import { useCameraPermissions , CameraView, Camera } from 'expo-camera';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -10,18 +10,25 @@ type CameraScreenProps = {
 };
 
 const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
-    const [permission, requestPermission] = useCameraPermissions();
+    const [permission, setPermission] = useState<boolean | null>(null);
     const cameraRef = useRef<CameraView>(null);
 
-    if (!permission) {
+    useEffect(() => {
+        (async () => {
+            const { status } = await Camera.requestCameraPermissionsAsync();
+            setPermission(status === 'granted');
+        })();
+    }, []);
+
+    if (permission === null) {
         return <View />;
       }
     
-      if (!permission.granted) {
+      if (permission === false) {
         return (
           <View style={styles.container}>
             <Text style={{ textAlign: 'center' }}>We need your permission to show the camera</Text>
-            <Button onPress={requestPermission} title="grant permission" />
+            <Button onPress={() => Camera.requestCameraPermissionsAsync().then(({ status }) => setPermission(status === 'granted'))} title="Grant permission" />
           </View>
         );
       }
