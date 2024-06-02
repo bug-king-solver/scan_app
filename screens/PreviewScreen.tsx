@@ -30,6 +30,11 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ route, navigation }) => {
         loadEmail();
     }, []);
 
+    const validateEmail = (email: string) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    };
+
     const sendEmail = async () => {
         if (!photo) {
             Alert.alert('Error', 'No photo available to send.');
@@ -39,37 +44,43 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ route, navigation }) => {
             Alert.alert("Error", "Please enter a valid email address.");
             return;
         }
-    
+
+        const completeEmail = `${email.trim()}@wickedfile.email`;
+        if (!validateEmail(completeEmail)) {
+            Alert.alert("Error", "Please enter a valid email address.");
+            return;
+        }
+
         const available = await MailComposer.isAvailableAsync();
         if (!available) {
             Alert.alert("Error", "Mail services are not available");
             return;
         }
-    
+
         try {
             const base64 = await FileSystem.readAsStringAsync(photo, { encoding: 'base64' });
             const imageData = `data:image/jpeg;base64,${base64}`;
             const pdf = new jsPDF();
             pdf.addImage(imageData, 'JPEG', 10, 10, 180, 160);
-            
+
             const pdfBase64 = pdf.output('datauristring').split(',')[1];
             const uri = FileSystem.cacheDirectory + 'temp_receipt.pdf';
             await FileSystem.writeAsStringAsync(uri, pdfBase64, { encoding: FileSystem.EncodingType.Base64 });
-    
+
             const emailResponse = await MailComposer.composeAsync({
-                recipients: [email + '@wickedfile.email'],
+                recipients: [completeEmail],
                 subject: 'A copy of receipt!',
                 body: 'Here is the pdf file you requested.',
                 attachments: [uri]
             });
-    
+
             if (emailResponse.status === 'sent') {
                 Alert.alert('Success', 'Email sent successfully!');
                 await AsyncStorage.setItem('savedEmail', email);
             } else {
                 Alert.alert('Error', 'Email was not sent.');
             }
-    
+
             // Optionally delete the temporary file
             await FileSystem.deleteAsync(uri);
         } catch (error) {
@@ -80,14 +91,13 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ route, navigation }) => {
         setEmail('');
         setModalVisible(false);
     };
-    
 
     const downloadPdf = async () => {
         if (!photo) {
             Alert.alert('Error', 'No photo available to download as PDF.');
             return;
         }
-    
+
         try {
             const { status } = await MediaLibrary.requestPermissionsAsync();
             if (status !== 'granted') {
@@ -101,11 +111,11 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ route, navigation }) => {
             const imageData = `data:image/jpeg;base64,${base64}`;
             const pdf = new jsPDF();
             pdf.addImage(imageData, 'JPEG', 10, 10, 180, 160);
-            
+
             const pdfOutput = pdf.output('datauristring').split(',')[1];
             const uri = FileSystem.documentDirectory + `receipt_${timestamp}.pdf`;
             await FileSystem.writeAsStringAsync(uri, pdfOutput, { encoding: FileSystem.EncodingType.Base64 });
-    
+
             const asset = await MediaLibrary.createAssetAsync(uri);
             await MediaLibrary.createAlbumAsync('Download', asset, false);
             Alert.alert('PDF Downloaded', 'PDF saved to your media library');
@@ -114,7 +124,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ route, navigation }) => {
             Alert.alert('Error', 'Failed to save PDF. Please try again.');
         }
     };
-    
+
     return (
         <View style={styles.container}>
             <Image source={{ uri: photo }} style={styles.image} resizeMode="contain" />
@@ -137,7 +147,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ route, navigation }) => {
                                 style={styles.input}
                                 onChangeText={setEmail}
                                 value={email}
-                                placeholder="Enter email address"
+                                placeholder="@wickedfile.email"
                                 keyboardType="email-address"
                             />
                             <View style={{ flexDirection: 'column', gap: 15, width: '100%' }}>
