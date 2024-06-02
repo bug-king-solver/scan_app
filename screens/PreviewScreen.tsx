@@ -47,7 +47,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ route, navigation }) => {
 
         const completeEmail = `${email.trim()}@wickedfile.email`;
         if (!validateEmail(completeEmail)) {
-            Alert.alert("Error", "Please enter a valid email address.");
+            Alert.alert("Error", "Please enter valid email formats.");
             return;
         }
 
