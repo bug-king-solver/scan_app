@@ -50,6 +50,12 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
                         <Text style={styles.buttonText}>Capture</Text>
                     </TouchableOpacity>
                 </View>
+                <View style={styles.cornerContainer}>
+                    <View style={styles.cornerTopLeft}/>
+                    <View style={styles.cornerTopRight}/>
+                    <View style={styles.cornerBottomLeft}/>
+                    <View style={styles.cornerBottomRight}/>
+                </View>
             </CameraView>
         </View>
     );
@@ -83,6 +89,53 @@ const styles = StyleSheet.create({
         marginLeft: 10,
         fontSize: 18,
         color: 'white',
+    },
+    cornerContainer: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0,
+    },
+    cornerTopLeft: {
+        position: 'absolute',
+        left: 10,
+        top: 10,
+        width: 20,
+        height: 20,
+        borderWidth: 2,
+        borderColor: 'white',
+        borderTopLeftRadius: 5,
+    },
+    cornerTopRight: {
+        position: 'absolute',
+        right: 10,
+        top: 10,
+        width: 20,
+        height: 20,
+        borderWidth: 2,
+        borderColor: 'white',
+        borderTopRightRadius: 5,
+    },
+    cornerBottomLeft: {
+        position: 'absolute',
+        left: 10,
+        bottom: 10,
+        width: 20,
+        height: 20,
+        borderWidth: 2,
+        borderColor: 'white',
+        borderBottomLeftRadius: 5,
+    },
+    cornerBottomRight: {
+        position: 'absolute',
+        right: 10,
+        bottom: 10,
+        width: 20,
+        height: 20,
+        borderWidth: 2,
+        borderColor: 'white',
+        borderBottomRightRadius: 5,
     },
 });
 
