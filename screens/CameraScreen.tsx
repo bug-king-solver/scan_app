@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Button } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Button, Alert } from 'react-native';
 import { useCameraPermissions , CameraView, Camera } from 'expo-camera';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { MaterialIcons } from '@expo/vector-icons';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 type CameraScreenProps = {
     navigation: NativeStackNavigationProp<RootStackParamList, 'Camera'>;
@@ -35,8 +36,17 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
 
     const takePicture = async () => {
         if (cameraRef.current) {
-            const photo = await cameraRef.current.takePictureAsync();
-            navigation.navigate('Preview', { photo: photo?.uri });
+            const photo = await cameraRef.current.takePictureAsync({ quality: 0.5 });
+            if (photo) {
+                const manipulatedImage = await ImageManipulator.manipulateAsync(
+                    photo.uri,
+                    [{ resize: { width: photo.width * 0.75, height: photo.height * 0.75 } }], // Optional resize
+                    { compress: 0.5 } // Further compression
+                );
+                navigation.navigate('Preview', { photo: manipulatedImage?.uri });
+            } else {
+                Alert.alert('Failed to capture photo');
+            }
         }
     };
 
@@ -49,12 +59,6 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
                         <MaterialIcons name="camera" size={28} color="white" />
                         <Text style={styles.buttonText}>Capture</Text>
                     </TouchableOpacity>
-                </View>
-                <View style={styles.cornerContainer}>
-                    <View style={styles.cornerTopLeft}/>
-                    <View style={styles.cornerTopRight}/>
-                    <View style={styles.cornerBottomLeft}/>
-                    <View style={styles.cornerBottomRight}/>
                 </View>
             </CameraView>
         </View>
@@ -89,53 +93,6 @@ const styles = StyleSheet.create({
         marginLeft: 10,
         fontSize: 18,
         color: 'white',
-    },
-    cornerContainer: {
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        top: 0,
-        bottom: 0,
-    },
-    cornerTopLeft: {
-        position: 'absolute',
-        left: 10,
-        top: 10,
-        width: 20,
-        height: 20,
-        borderWidth: 2,
-        borderColor: 'white',
-        borderTopLeftRadius: 5,
-    },
-    cornerTopRight: {
-        position: 'absolute',
-        right: 10,
-        top: 10,
-        width: 20,
-        height: 20,
-        borderWidth: 2,
-        borderColor: 'white',
-        borderTopRightRadius: 5,
-    },
-    cornerBottomLeft: {
-        position: 'absolute',
-        left: 10,
-        bottom: 10,
-        width: 20,
-        height: 20,
-        borderWidth: 2,
-        borderColor: 'white',
-        borderBottomLeftRadius: 5,
-    },
-    cornerBottomRight: {
-        position: 'absolute',
-        right: 10,
-        bottom: 10,
-        width: 20,
-        height: 20,
-        borderWidth: 2,
-        borderColor: 'white',
-        borderBottomRightRadius: 5,
     },
 });
 
