@@ -5,9 +5,9 @@ import { RootStackParamList } from '../App';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as FileSystem from 'expo-file-system';
 import { jsPDF } from 'jspdf';
-import * as MediaLibrary from 'expo-media-library';
 import * as MailComposer from 'expo-mail-composer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StorageAccessFramework } from 'expo-file-system';
 
 type PreviewScreenProps = {
     route: RouteProp<RootStackParamList, 'Preview'>;
@@ -99,26 +99,23 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ route, navigation }) => {
         }
 
         try {
-            const { status } = await MediaLibrary.requestPermissionsAsync();
-            if (status !== 'granted') {
+            const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
+            if (!permissions.granted) {
                 Alert.alert('Permission Denied', 'Cannot save file without storage permissions');
                 return;
             }
-
-            const timestamp = new Date().getTime();
 
             const base64 = await FileSystem.readAsStringAsync(photo, { encoding: 'base64' });
             const imageData = `data:image/jpeg;base64,${base64}`;
             const pdf = new jsPDF();
             pdf.addImage(imageData, 'JPEG', 10, 10, 180, 160);
-
             const pdfOutput = pdf.output('datauristring').split(',')[1];
-            const uri = FileSystem.documentDirectory + `receipt_${timestamp}.pdf`;
+
+            const fileName = `receipt_${new Date().getTime()}.pdf`;
+            const uri = await StorageAccessFramework.createFileAsync(permissions.directoryUri, fileName, 'application/pdf');
             await FileSystem.writeAsStringAsync(uri, pdfOutput, { encoding: FileSystem.EncodingType.Base64 });
 
-            const asset = await MediaLibrary.createAssetAsync(uri);
-            await MediaLibrary.createAlbumAsync('Download', asset, false);
-            Alert.alert('PDF Downloaded', 'PDF saved to your media library');
+            Alert.alert('PDF Downloaded', 'PDF saved to the selected location');
         } catch (error) {
             console.error('Failed to save PDF:', error);
             Alert.alert('Error', 'Failed to save PDF. Please try again.');
